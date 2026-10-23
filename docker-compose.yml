@@ -1,0 +1,22 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: orderflow-postgres
+    environment:
+      POSTGRES_DB: orderflow
+      POSTGRES_USER: orderflow
+      POSTGRES_PASSWORD: orderflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - orderflow-postgres-data:/var/lib/postgresql/data
+
+  kafka:
+    image: apache/kafka:3.9.1
+    container_name: orderflow-kafka
+    ports:
+      - "9092:9092"
+
+volumes:
+  orderflow-postgres-data:
