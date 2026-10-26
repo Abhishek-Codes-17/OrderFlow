@@ -18,5 +18,11 @@ services:
     ports:
       - "9092:9092"
 
+  redis:
+    image: redis:7.4
+    container_name: orderflow-redis
+    ports:
+      - "6379:6379"
+
 volumes:
   orderflow-postgres-data:

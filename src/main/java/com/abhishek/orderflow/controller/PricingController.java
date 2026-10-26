@@ -21,9 +21,7 @@ public class PricingController {
     public ResponseEntity<PricingResponse> calculatePrice(
             @RequestBody PricingRequest request) {
 
-        System.out.println(
-                "JAVA RECEIVED PRICING REQUEST -> " + request
-        );
+
 
         PricingResponse response =
                 pricingClient.calculatePrice(request);
