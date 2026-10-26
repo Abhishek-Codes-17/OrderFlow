@@ -5,6 +5,7 @@ import com.abhishek.orderflow.dto.OrderResponse;
 import com.abhishek.orderflow.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -56,5 +57,14 @@ public class OrderController {
     @PostMapping("/{id}/cancel")
     public OrderResponse cancelOrder(@PathVariable UUID id) {
         return orderService.cancelOrder(id);
+    }
+
+    @PostMapping("/{id}/price")
+    public ResponseEntity<OrderResponse> priceOrder(
+            @PathVariable UUID id) {
+
+        return ResponseEntity.ok(
+                orderService.priceOrder(id)
+        );
     }
 }

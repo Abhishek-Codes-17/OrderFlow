@@ -30,6 +30,9 @@ public class Order {
     @Column(precision = 19, scale = 4)
     private BigDecimal price;
 
+    @Column(precision = 19, scale = 4)
+    private BigDecimal calculatedPrice;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;
@@ -71,11 +74,34 @@ public class Order {
         status = OrderStatus.VALIDATED;
     }
 
+    public void applyCalculatedPrice(BigDecimal calculatedPrice) {
+
+        if (status != OrderStatus.VALIDATED) {
+            throw new IllegalStateException(
+                    "Only VALIDATED orders can be priced"
+            );
+        }
+
+        if (calculatedPrice == null) {
+            throw new IllegalArgumentException(
+                    "Calculated price cannot be null"
+            );
+        }
+
+        this.calculatedPrice = calculatedPrice;
+    }
+
     public void accept() {
 
         if (status != OrderStatus.VALIDATED) {
             throw new IllegalStateException(
                     "Only VALIDATED orders can be accepted"
+            );
+        }
+
+        if (calculatedPrice == null) {
+            throw new IllegalStateException(
+                    "Order must be priced before it can be accepted"
             );
         }
 
@@ -134,6 +160,10 @@ public class Order {
 
     public BigDecimal getPrice() {
         return price;
+    }
+
+    public BigDecimal getCalculatedPrice() {
+        return calculatedPrice;
     }
 
     public OrderStatus getStatus() {

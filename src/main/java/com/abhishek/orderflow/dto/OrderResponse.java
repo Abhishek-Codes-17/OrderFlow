@@ -15,8 +15,8 @@ public record OrderResponse(
         long quantity,
         OrderType orderType,
         BigDecimal price,
+        BigDecimal calculatedPrice,
         OrderStatus status,
         Instant createdAt
 ) {
-
 }

@@ -4,17 +4,20 @@ import com.abhishek.orderflow.domain.Order;
 import com.abhishek.orderflow.domain.OrderStatus;
 import com.abhishek.orderflow.dto.CreateOrderRequest;
 import com.abhishek.orderflow.dto.OrderResponse;
+import com.abhishek.orderflow.event.OrderCreatedEvent;
 import com.abhishek.orderflow.exception.InvalidOrderStateException;
 import com.abhishek.orderflow.exception.OrderNotFoundException;
-import com.abhishek.orderflow.repository.OrderRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.abhishek.orderflow.event.OrderCreatedEvent;
 import com.abhishek.orderflow.outbox.OutboxEvent;
 import com.abhishek.orderflow.outbox.OutboxEventRepository;
 import com.abhishek.orderflow.outbox.OutboxStatus;
+import com.abhishek.orderflow.pricing.PricingClient;
+import com.abhishek.orderflow.pricing.PricingRequest;
+import com.abhishek.orderflow.pricing.PricingResponse;
+import com.abhishek.orderflow.repository.OrderRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,19 +26,21 @@ import java.util.UUID;
 @Service
 public class OrderService {
 
-//    private final OrderRepository orderRepository;
     private final OrderRepository orderRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final PricingClient pricingClient;
 
     public OrderService(
             OrderRepository orderRepository,
             OutboxEventRepository outboxEventRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            PricingClient pricingClient) {
 
         this.orderRepository = orderRepository;
         this.outboxEventRepository = outboxEventRepository;
         this.objectMapper = objectMapper;
+        this.pricingClient = pricingClient;
     }
 
     @Transactional
@@ -115,7 +120,46 @@ public class OrderService {
         try {
             order.validate();
         } catch (IllegalStateException exception) {
-            throw new InvalidOrderStateException(exception.getMessage());
+            throw new InvalidOrderStateException(
+                    exception.getMessage()
+            );
+        }
+
+        return toResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse priceOrder(UUID id) {
+
+        Order order = findOrder(id);
+
+        if (order.getStatus() != OrderStatus.VALIDATED) {
+            throw new InvalidOrderStateException(
+                    "Only VALIDATED orders can be priced"
+            );
+        }
+
+        PricingRequest pricingRequest =
+                new PricingRequest(
+                        order.getInstrumentId(),
+                        order.getSide().name(),
+                        order.getQuantity(),
+                        order.getPrice()
+                );
+
+        PricingResponse pricingResponse =
+                pricingClient.calculatePrice(pricingRequest);
+
+        try {
+            order.applyCalculatedPrice(
+                    pricingResponse.calculatedPrice()
+            );
+        } catch (IllegalStateException |
+                 IllegalArgumentException exception) {
+
+            throw new InvalidOrderStateException(
+                    exception.getMessage()
+            );
         }
 
         return toResponse(order);
@@ -129,7 +173,9 @@ public class OrderService {
         try {
             order.accept();
         } catch (IllegalStateException exception) {
-            throw new InvalidOrderStateException(exception.getMessage());
+            throw new InvalidOrderStateException(
+                    exception.getMessage()
+            );
         }
 
         return toResponse(order);
@@ -143,7 +189,9 @@ public class OrderService {
         try {
             order.reject();
         } catch (IllegalStateException exception) {
-            throw new InvalidOrderStateException(exception.getMessage());
+            throw new InvalidOrderStateException(
+                    exception.getMessage()
+            );
         }
 
         return toResponse(order);
@@ -157,7 +205,9 @@ public class OrderService {
         try {
             order.cancel();
         } catch (IllegalStateException exception) {
-            throw new InvalidOrderStateException(exception.getMessage());
+            throw new InvalidOrderStateException(
+                    exception.getMessage()
+            );
         }
 
         return toResponse(order);
@@ -166,7 +216,9 @@ public class OrderService {
     private Order findOrder(UUID id) {
 
         return orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException(id));
+                .orElseThrow(
+                        () -> new OrderNotFoundException(id)
+                );
     }
 
     private OrderResponse toResponse(Order order) {
@@ -178,6 +230,7 @@ public class OrderService {
                 order.getQuantity(),
                 order.getOrderType(),
                 order.getPrice(),
+                order.getCalculatedPrice(),
                 order.getStatus(),
                 order.getCreatedAt()
         );
