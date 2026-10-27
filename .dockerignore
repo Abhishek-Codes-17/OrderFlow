@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+target
+*.iml
+*.log
+.DS_Store
+
+pricing-service/.venv
+pricing-service/__pycache__
+pricing-service/.pytest_cache

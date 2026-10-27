@@ -4,6 +4,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.net.http.HttpClient;
@@ -14,7 +15,10 @@ public class PricingClient {
     private final RestClient restClient;
     private final PricingCache pricingCache;
 
-    public PricingClient(PricingCache pricingCache) {
+    public PricingClient(
+            PricingCache pricingCache,
+            @Value("${orderflow.pricing.base-url}")
+            String pricingServiceUrl) {
 
         this.pricingCache = pricingCache;
 
@@ -26,7 +30,7 @@ public class PricingClient {
                 new JdkClientHttpRequestFactory(httpClient);
 
         this.restClient = RestClient.builder()
-                .baseUrl("http://localhost:8000")
+                .baseUrl(pricingServiceUrl)
                 .requestFactory(requestFactory)
                 .build();
     }
