@@ -4,6 +4,10 @@ OrderFlow is an event-driven order management system built with Java, Spring Boo
 
 The project demonstrates backend and distributed-systems patterns including transactional outbox messaging, asynchronous event processing, idempotent consumers, retry and dead-letter handling, cache-aside pricing, service-to-service communication, automated testing, CI, and containerized local deployment.
 
+## System Architecture
+
+![OrderFlow System Architecture](docs/orderflow-architecture.png)
+
 ## Architecture
 
 ```text
